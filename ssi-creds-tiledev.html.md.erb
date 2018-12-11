@@ -157,7 +157,23 @@ To enable your service broker to store binding credentials in runtime CredHub an
 
 1. In your service broker code, locate where your broker handles binding requests from the CC.
 
-1. Add code that authenticates your service broker to CredHub using OAuth2 tokens from UAA. Each call to the CredHub API must include an authorization header. For more information about CredHub authentication, see the [Authentication](https://credhub-api.cfapps.io/#authentication) section of the CredHub API documentation.
+1. Create a UAA client following the [UAA documentation](https://docs.pivotal.io/pivotalcf/2-3/uaa/uaa-overview.html) that has `credhub.read` and `credhub.write` authorities. Once you have a UAA client, you can use it to authenticate with CredHub.
+
+1. Update credhub to allow the new UAA client to write to its own namespace:
+	```
+curl "https://CREDHUB.INTERNAL_URL:CREDHUB.PORT/api/v2/permissions" \
+  -X POST \
+  -d '
+  {
+    "path": "/c/CLIENT-IDENTIFIER/*",
+    "actor": "uaa-user:UAA-GUID"
+    "operations": ["read", "write"]
+  }' \
+  -H "authorization: bearer [TOKEN]" \
+  -H 'content-type: application/json'
+	```
+
+1. Add code that authenticates your service broker to CredHub using OAuth2 tokens from UAA with the new UAA client that you created. Each call to the CredHub API must include an authorization header. For more information about CredHub authentication, see the [Authentication](https://credhub-api.cfapps.io/#authentication) section of the CredHub API documentation.
 
 1. Update your code to store your binding credentials in CredHub using the CredHub API endpoint for setting the `json` credential type with a user-provided value. See the following example for how to format your API call:
 
